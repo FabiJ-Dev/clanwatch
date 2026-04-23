@@ -1,0 +1,6 @@
+.env # contains secret token, should not be shared
+.DS_Store
+.vscode/
+__pycache__/
+.env
+.env
