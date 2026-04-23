@@ -1,15 +1,26 @@
+# Main starting bot logic. Whenever I run the bot from here, run the code in this file with all the imports coming after.
+# Usage: Just hit the play button on VS Code (if on local machine).
+
 import discord
 from discord.ext import commands
 from discord import app_commands 
 import os # For loading environment variables
 from dotenv import load_dotenv # get the .env file and load the environment variables
+from setchannels import ChannelManager # import the ChannelManager cog from setchannels.py
+from clan import ClansManager
+from clan import ClansModal
 
 load_dotenv() # load the token 
 token = os.getenv('DISCORD_TOKEN') # get the token (secret)
-GUILD_ID = 1437965874056265830 # replace with your server's ID
+GUILD_ID = int(os.getenv('GUILD_ID')) # get the guild ID from the environment variable and convert it to an integer
 
 # begin the bot 
 class Client(commands.Bot):
+    async def setup_hook(self):
+        await self.add_cog(ChannelManager(self)) # add the ChannelManager cog to the bot
+        await self.add_cog(ClansManager(self))
+        print("Cogs loaded successfully!")
+
     async def on_ready(self):
         print(f'Logged in as {self.user}')
 
@@ -19,6 +30,7 @@ class Client(commands.Bot):
             print(f'Synced {len(synced)} command(s) to the server.')
         except Exception as e:
             print(f"An error occurred while syncing commands: {e}")
+
 
 # moved intents upwards to declare before the client. 
 intents = discord.Intents.default() 
@@ -48,6 +60,6 @@ async def rps(interaction: discord.Interaction, choice: app_commands.Choice[str]
         result = "You lose! 🙁"    
 
     # Print message to the channel with game result. 
-    await interaction.response.send_message(f'You chose {choice.value}, I chose {bot_choice}. {result}') 
+    await interaction.response.send_message(f'You chose {choice.value}, \nI chose {bot_choice}. \n**{result}**') 
 
 client.run(token) # use the secret token
