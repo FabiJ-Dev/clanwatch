@@ -41,20 +41,16 @@ class GetChannels(commands.Cog):
             await interaction.response.send_message("No channels are currently saved.", ephemeral=True)
             return
         
-        message_lines = ["**Currently Configured Channels:**"]
-        
+        # We are building a LIST of STRINGS. Therefore, need the brackets around that point.
+        getchannels_msg = ["Your channels set are..."]
+
         for channel_name, channel_id in channels_data.items():
             if channel_id:
-                # #ID is Discord's formatting for clicking channel mentions
-                message_lines.append(f"• **{channel_name}**: <#{channel_id}>")
+                getchannels_msg.append(f"{channel_name} -> <#{channel_id}>")
             else:
-                message_lines.append(f"• **{channel_name}**: NO channel")
-
-        # Join our list into a single string with line breaks
-        final_message = "\n".join(message_lines)
-
-        # Send the final list back to the user
-        await interaction.response.send_message(final_message)
+                getchannels_msg.append(f"{channel_name}: No channel found!")
+        full_getchannels = "\n".join(getchannels_msg)
+        await interaction.response.send_message(full_getchannels)
 
 # Send to main.py to add this cog to the bot.
 async def setup(bot):

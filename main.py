@@ -48,7 +48,7 @@ client = Client(command_prefix="!", intents=intents)
     app_commands.Choice(name="paper 📄", value="paper"),
     app_commands.Choice(name="scissors ✂️", value="scissors")
 ])
-# Logic for bot to choose the options and determine the winner.
+# Logic for bot to choose the options and determine the winner. Toy command, no further purpose. 
 async def rps(interaction: discord.Interaction, choice: app_commands.Choice[str]):
     import random
     options = ["rock", "paper", "scissors"]
