@@ -26,33 +26,37 @@ class ChannelManager(commands.Cog):
     # Command to set our channels.
     @app_commands.command(name="setchannels", description="Set the channels for the bot to post in!")
     @app_commands.guilds(discord.Object(id=GUILD_ID)) # Limit the command to a specific guild
-    @app_commands.describe(channel_type="Choose the type of channel to set (Kills/Results/Roster)", channel_name="The name of the channel to set")
+    @app_commands.describe(channel_type="Choose the type of channel to set (Kills/Results/Roster)", channel="Select the actual channel")
+    
     @app_commands.choices(channel_type=[
         app_commands.Choice(name="Kills", value="KILLS"),
         app_commands.Choice(name="Results", value="RESULTS"),
         app_commands.Choice(name="Roster", value="ROSTER")
     ])
     # Logic to set the channels based on the type and name provided by the user.
-    async def setchannels(self, interaction: discord.Interaction, channel_type: app_commands.Choice[str], channel_name: str):
-        await interaction.response.send_message(f'Set {channel_type.value} channel to {channel_name}!', ephemeral=True) 
-        json_data = {
-            "KILLS": channel_name if channel_type.value == "KILLS" else None,
-            "RESULTS": channel_name if channel_type.value == "RESULTS" else None,
-            "ROSTER": channel_name if channel_type.value == "ROSTER" else None
-        }
-        # File is in storage/channels.json. If the file doesn't exist, it will be created. If it does exist, it will be overwritten with the new channel information.
-        with open('storage/channels.json', 'w') as f:
-            json.dump(json_data, f, indent=4)
+    async def setchannels(self, interaction: discord.Interaction, channel_type: app_commands.Choice[str], channel: discord.TextChannel):
+        file_path = 'storage/channels.json'
+        os.makedirs('storage', exist_ok=True)
 
-    # Get the channels that are stored.
-    @app_commands.command(name="getchannels", description="Get the channels that are set for the bot to post in!")
-    @app_commands.guilds(discord.Object(id=GUILD_ID)) # Limit the command
-    async def getchannels(self, interaction: discord.Interaction):
-        with open('storage/channels.json', 'r') as f:
-            channels = json.load(f)
-        await interaction.response.send_message(f'Current channels:\nKills: {channels["KILLS"]}\nResults: {channels["RESULTS"]}\nRoster: {channels["ROSTER"]}', ephemeral=True)
+        data = {
+            "KILLS": None,
+            "RESULTS": None,
+            "ROSTER": None
+        }
+
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                try:
+                    data = json.load(f) # Load the old saves into 'data'
+                except json.JSONDecodeError:
+                    pass # If the file is corrupted or empty, just ignore and use the blank slate
+
+        data[channel_type.value] = channel.id
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        await interaction.response.send_message(f'Success! Set **{channel_type.value}** to {channel.mention}.', ephemeral=True)
 
 # Send to main.py to add this cog to the bot.
 async def setup(bot):
     await bot.add_cog(ChannelManager(bot))
-

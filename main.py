@@ -9,6 +9,7 @@ from dotenv import load_dotenv # get the .env file and load the environment vari
 from setchannels import ChannelManager # import the ChannelManager cog from setchannels.py
 from clan import ClansManager
 from clan import ClansModal
+from getchannels import GetChannels
 
 load_dotenv() # load the token 
 token = os.getenv('DISCORD_TOKEN') # get the token (secret)
@@ -19,6 +20,7 @@ class Client(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(ChannelManager(self)) # add the ChannelManager cog to the bot
         await self.add_cog(ClansManager(self))
+        await self.add_cog(GetChannels(self))
         print("Cogs loaded successfully!")
 
     async def on_ready(self):
