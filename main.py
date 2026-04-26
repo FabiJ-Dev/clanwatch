@@ -1,30 +1,38 @@
 # Main starting bot logic. Whenever I run the bot from here, run the code in this file with all the imports coming after.
-# Usage: Just hit the play button on VS Code (if on local machine).
+# Usage: Just hit the play button on VS Code (if on local machine). You need the .env and token.
 
+# Essential:
 import discord
 from discord.ext import commands
 from discord import app_commands 
 import os # For loading environment variables
 from dotenv import load_dotenv # get the .env file and load the environment variables
-from setchannels import ChannelManager # import the ChannelManager cog from setchannels.py
+
+# Cogs to be used from other .py files across the project directory:
+from setchannels import ChannelManager 
 from clan import ClansManager
 from clan import ClansModal
 from getchannels import GetChannels
 from printchannels import PrintChannels
+from setroles import RoleManager
 
 load_dotenv() # load the token 
 token = os.getenv('DISCORD_TOKEN') # get the token (secret)
 GUILD_ID = int(os.getenv('GUILD_ID')) # get the guild ID from the environment variable and convert it to an integer
 
-# begin the bot 
+# Start the bot, import all the cogs, and get ready.
 class Client(commands.Bot):
     async def setup_hook(self):
-        await self.add_cog(ChannelManager(self)) # add the ChannelManager cog to the bot
+        await self.add_cog(ChannelManager(self))
         await self.add_cog(ClansManager(self))
         await self.add_cog(GetChannels(self))
         await self.add_cog(PrintChannels(self))
+        await self.add_cog(RoleManager(self))
         print("Cogs loaded successfully!")
 
+        self.tree.on_error = self.on_app_command_error
+
+# Sync commands and print the "Ready" message.
     async def on_ready(self):
         print(f'Logged in as {self.user}')
 
@@ -35,14 +43,22 @@ class Client(commands.Bot):
         except Exception as e:
             print(f"An error occurred while syncing commands: {e}")
 
+# This prints the error if there permission < permission required, exception otherwise.
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            # If the command failed because of our has_permission gate:
+            await interaction.response.send_message("❌ You do not have permission to use this command.", ephemeral=True)
+        else:
+            # If it's a different kind of error, we still want to see it in our terminal
+            print(f"Ignoring exception in command '{interaction.command.name}': {error}")
 
-# moved intents upwards to declare before the client. 
+# Moved intents to be declared before the client.
 intents = discord.Intents.default() 
 intents.message_content = True # Enable the message content intent
 client = Client(command_prefix="!", intents=intents)
 
-# slash command to play RPS 
-# usage: /rps choice(rock/paper/scissors, limited to those options only
+# slash command to play rock-paper-scissors, can be used by anyone
+# Usage: /rps choice(rock/paper/scissors)
 @client.tree.command(name="rps", description="Play rock paper scissors with the bot!",guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(choice="Choose rock, paper, or scissors")
 @app_commands.choices(choice=[

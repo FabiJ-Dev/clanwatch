@@ -1,91 +1,145 @@
+# Purpose: Print the BLANK templates to the channels set from /setchannels. Also log the message ID so we can go back and edit later with commands.
+# Usage: /printchannels (no arguments)
+
 import discord
 from discord.ext import commands
 from discord import app_commands
-import os # For loading environment variables
-from dotenv import load_dotenv # get the .env file and load the environment variables
-import json # For storing channel information in a file
+import os 
+from dotenv import load_dotenv 
+import json 
+from permission import has_permission
 
-load_dotenv() # load the token
-GUILD_ID=int(os.getenv('GUILD_ID')) # get the guild ID from the environment variable and convert it to an integer
+load_dotenv() 
+GUILD_ID=int(os.getenv('GUILD_ID')) 
 
 class PrintChannels(commands.Cog):
     def __init__(self, bot): 
         self.bot = bot
 
-    # Listener to print when the cog is ready.
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'PrintChannels cog is ready!')
     
-    # Command to set our channels.
     @app_commands.command(name="printchannels", description="Print the BLANK templates for the channels.")
-    @app_commands.guilds(discord.Object(id=GUILD_ID)) # Limit the command to a specific guild
+    @has_permission(3)
+    @app_commands.guilds(discord.Object(id=GUILD_ID)) 
     async def printchannels(self, interaction: discord.Interaction):
-        # os.path.join will extract files from the directory of the bot.
+        await interaction.response.defer(ephemeral=True)
+
+        # 1. Grab the current Server ID
+        guild_id = str(interaction.guild_id)
+
+        # 2. Load and extract Channels (Nested)
         channels_file = "storage/channels.json"
         if not os.path.exists(channels_file):
-            await interaction.response.send_message("Not found.")
+            await interaction.followup.send("Not found: Run /setchannels first.")
             return
     
         with open(channels_file, "r") as file:
             try:
-                channels_data = json.load(file)
+                all_channels = json.load(file)
             except json.JSONDecodeError:
-                channels_data={}
+                all_channels = {}
+        
+        server_channels = all_channels.get(guild_id)
+        if not server_channels:
+            await interaction.followup.send("❌ Channels not set for this server. Use `/setchannels`.")
+            return
 
+        # 3. Load and extract Clan Info (Nested)
         clans_file = "storage/clansinfo.json"
         if not os.path.exists(clans_file):
-            await interaction.response.send_message("Not found")
+            await interaction.followup.send("No clan found. Use /clan create.")
             return
         
         with open (clans_file, "r") as file:
             try:
-                clan_data = json.load(file)
+                all_clans = json.load(file)
             except json.JSONDecodeError:
-                clan_data = {}
+                all_clans = {}
 
-        # Obtain clan info
-        clanName = clan_data.get("CLAN_NAME")
-        clanTag = clan_data.get("CLAN_TAG")
-        clanDesc = clan_data.get("CLAN_DESCRIPTION")
+        server_clan = all_clans.get(guild_id)
+        if not server_clan:
+            await interaction.followup.send("❌ No clan registered for this server! Use `/clan create`.")
+            return
 
-        # CREATE new files 
-        clan_storageFiles = ["storage/roster.json", "storage/kills.json", "storage/results.json"]
-        for new in clan_storageFiles:
-                    if not os.path.exists(new):
-                        with open(new, 'w') as f:
-                            json.dump({}, f, indent=4) 
+        clanName = server_clan.get("CLAN_NAME", "Unknown Clan")
+        clanTag = server_clan.get("CLAN_TAG", "UNK")
+        clanDesc = server_clan.get("CLAN_DESCRIPTION", "No description.")
+
+        # 4. Handle Message Tracking (Nested)
+        msg_file = "storage/messages.json"
+        all_msg_data = {}
+        if os.path.exists(msg_file):
+            with open (msg_file, "r") as file:
+                try:
+                    all_msg_data = json.load(file)
+                except json.JSONDecodeError:
+                    pass
+        
+        # Initialize this server's message entry if it doesn't exist
+        if guild_id not in all_msg_data:
+            all_msg_data[guild_id] = {"ROSTER": None, "KILLS": None, "RESULTS": None}
+        
+        server_msgs = all_msg_data[guild_id]
 
         async def fetch_ch(cid):
             if not cid: return None
-            channels = self.bot.get_channel(int(cid))
-            if not channels:
+            channel = self.bot.get_channel(int(cid))
+            if not channel:
                 try:
-                    channels = await self.bot.fetch_channel(int(cid))
+                    channel = await self.bot.fetch_channel(int(cid))
                 except:
                     return None
-            return channels
-        
-        # Roster Template
-        roster_ch = await fetch_ch(channels_data.get("ROSTER"))
+            return channel
+
+        async def checkmsg(channel, channelkey, text):  
+            saved_msgid = server_msgs.get(channelkey)  
+            
+            if saved_msgid:
+                try:
+                    # Try to fetch the message to confirm it still exists
+                    await channel.fetch_message(saved_msgid)
+                    
+                    # If it exists, send a specific alert for this channel
+                    await interaction.followup.send(
+                        f"ℹ️ The **{channelkey}** message already exists in {channel.mention}.", 
+                        ephemeral=True
+                    )
+                    return # Exit the function so we don't send a duplicate
+                except discord.NotFound:
+                    # If the message was deleted manually, we ignore the error and 
+                    # proceed to send a new one below.
+                    pass 
+
+            # If we reached this point, the message doesn't exist. Send it now.
+            new_msg = await channel.send(text)
+            server_msgs[channelkey] = new_msg.id
+        # 5. Execute Printing Logic
+        # Roster
+        roster_ch = await fetch_ch(server_channels.get("ROSTER"))
         if roster_ch:
             roster_msg = f"# 🛡️ {clanName} [{clanTag}] Roster\n*{clanDesc}*\n\n> *The roster is currently empty. Use `/roster add` to add members!*"
-            await roster_ch.send(roster_msg)
+            await checkmsg(roster_ch, "ROSTER", roster_msg)
 
-        # Kills Template
-        kills_ch = await fetch_ch(channels_data.get("KILLS"))
+        # Kills
+        kills_ch = await fetch_ch(server_channels.get("KILLS"))
         if kills_ch:
             kills_msg = f"# ⚔️ {clanName} Top Kills\n\n> *No kills logged yet. Use `/kills add` to update the leaderboard!*"
-            await kills_ch.send(kills_msg)
+            await checkmsg(kills_ch, "KILLS", kills_msg)
 
-        # Results Template
-        results_ch = await fetch_ch(channels_data.get("RESULTS"))
+        # Results
+        results_ch = await fetch_ch(server_channels.get("RESULTS"))
         if results_ch:
             results_msg = f"# 🏆 {clanName} VS History\n\n> *No matches recorded. Use `/vs add` to log a match!*"
-            await results_ch.send(results_msg)
+            await checkmsg(results_ch, "RESULTS", results_msg)
 
-        await interaction.response.send_message(f'Success.')
+        # 6. Save back the updated nested data
+        all_msg_data[guild_id] = server_msgs
+        with open(msg_file, "w") as f:
+            json.dump(all_msg_data, f, indent=4)
+
+        await interaction.followup.send("✅ The channels now have messages printed!")
 
 async def setup(bot):
     await bot.add_cog(PrintChannels(bot))
-

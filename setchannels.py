@@ -9,6 +9,7 @@ from discord import app_commands
 import os # For loading environment variables
 from dotenv import load_dotenv # get the .env file and load the environment variables
 import json # For storing channel information in a file
+from permission import has_permission
 
 load_dotenv() # load the token
 GUILD_ID=int(os.getenv('GUILD_ID')) # get the guild ID from the environment variable and convert it to an integer
@@ -25,6 +26,7 @@ class ChannelManager(commands.Cog):
     
     # Command to set our channels.
     @app_commands.command(name="setchannels", description="Set the channels for the bot to post in!")
+    @has_permission(3)
     @app_commands.guilds(discord.Object(id=GUILD_ID)) # Limit the command to a specific guild
     @app_commands.describe(channel_type="Choose the type of channel to set (Kills/Results/Roster)", channel="Select the actual channel")
     
@@ -35,28 +37,27 @@ class ChannelManager(commands.Cog):
     ])
     # Logic to set the channels based on the type and name provided by the user.
     async def setchannels(self, interaction: discord.Interaction, channel_type: app_commands.Choice[str], channel: discord.TextChannel):
+        guild_id = str(interaction.guild_id)
         file_path = 'storage/channels.json'
         os.makedirs('storage', exist_ok=True)
 
-        data = {
-            "KILLS": None,
-            "RESULTS": None,
-            "ROSTER": None
-        }
-
+        data = {}
         if os.path.exists(file_path):
             with open(file_path, 'r') as f:
-                try:
-                    data = json.load(f) # Load the old saves into 'data'
-                except json.JSONDecodeError:
-                    pass # If the file is corrupted or empty, just ignore and use the blank slate
+                try: data = json.load(f)
+                except: pass
 
-        data[channel_type.value] = channel.id
+        # Ensure THIS server has a spot in the file
+        if guild_id not in data:
+            data[guild_id] = {"KILLS": None, "RESULTS": None, "ROSTER": None}
+
+        # Update specific channel for this server
+        data[guild_id][channel_type.value] = channel.id
+
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=4)
 
         await interaction.response.send_message(f'Success! Set **{channel_type.value}** to {channel.mention}.', ephemeral=True)
-
 # Send to main.py to add this cog to the bot.
 async def setup(bot):
     await bot.add_cog(ChannelManager(bot))
