@@ -1,18 +1,17 @@
-# usage: /setchannels (KILLS or RESULTS or ROSTER) (channelname)
-# This file is for setting the channels for the bot to post in.
+# Usage: /setchannels (KILLS or RESULTS or ROSTER) (channelname)
+# Purpose: This command is for setting the channels for the bot to post in.
 # The bot will only post in the channels that are set using this command. It will NOT post anything inside those channels.
 # Store these channels in json or something so that we can access them later when we want to post updates.
 
-import discord
+# Essential:
+import discord, os, json
 from discord.ext import commands
 from discord import app_commands
-import os # For loading environment variables
-from dotenv import load_dotenv # get the .env file and load the environment variables
-import json # For storing channel information in a file
+from dotenv import load_dotenv 
 from permission import has_permission
 
-load_dotenv() # load the token
-GUILD_ID=int(os.getenv('GUILD_ID')) # get the guild ID from the environment variable and convert it to an integer
+load_dotenv()
+GUILD_ID=int(os.getenv('GUILD_ID'))
 
 # ChannelManager class is a cog that will handle the channel management commands and listeners.
 class ChannelManager(commands.Cog):
@@ -24,7 +23,7 @@ class ChannelManager(commands.Cog):
     async def on_ready(self):
         print(f'ChannelManager cog is ready!')
     
-    # Command to set our channels.
+    # Begin command logic, limit it to Admin+, tie it to the guild.
     @app_commands.command(name="setchannels", description="Set the channels for the bot to post in!")
     @has_permission(3)
     @app_commands.guilds(discord.Object(id=GUILD_ID)) # Limit the command to a specific guild
@@ -35,6 +34,7 @@ class ChannelManager(commands.Cog):
         app_commands.Choice(name="Results", value="RESULTS"),
         app_commands.Choice(name="Roster", value="ROSTER")
     ])
+
     # Logic to set the channels based on the type and name provided by the user.
     async def setchannels(self, interaction: discord.Interaction, channel_type: app_commands.Choice[str], channel: discord.TextChannel):
         guild_id = str(interaction.guild_id)
@@ -58,6 +58,7 @@ class ChannelManager(commands.Cog):
             json.dump(data, f, indent=4)
 
         await interaction.response.send_message(f'Success! Set **{channel_type.value}** to {channel.mention}.', ephemeral=True)
+        
 # Send to main.py to add this cog to the bot.
 async def setup(bot):
     await bot.add_cog(ChannelManager(bot))

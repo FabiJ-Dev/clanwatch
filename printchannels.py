@@ -1,12 +1,11 @@
-# Purpose: Print the BLANK templates to the channels set from /setchannels. Also log the message ID so we can go back and edit later with commands.
 # Usage: /printchannels (no arguments)
+# Purpose: print the blank templates for the roster, the kills leaderboard, and the results.
 
-import discord
+# Essential:
+import discord, os, json
 from discord.ext import commands
 from discord import app_commands
-import os 
 from dotenv import load_dotenv 
-import json 
 from permission import has_permission
 
 load_dotenv() 
@@ -20,21 +19,20 @@ class PrintChannels(commands.Cog):
     async def on_ready(self):
         print(f'PrintChannels cog is ready!')
     
+    # Begin command logic, requires Level 3 (Admin) to print new messages.
     @app_commands.command(name="printchannels", description="Print the BLANK templates for the channels.")
     @has_permission(3)
     @app_commands.guilds(discord.Object(id=GUILD_ID)) 
     async def printchannels(self, interaction: discord.Interaction):
+        # Defer will trigger the "ClanWatch is Thinking" since we get only 4 seconds to respond to commands, else it fails.
         await interaction.response.defer(ephemeral=True)
-
-        # 1. Grab the current Server ID
         guild_id = str(interaction.guild_id)
 
-        # 2. Load and extract Channels (Nested)
+        # Load and extract channel IDs that need a message to be printed into. 
         channels_file = "storage/channels.json"
-        if not os.path.exists(channels_file):
-            await interaction.followup.send("Not found: Run /setchannels first.")
+        if not os.path.exists(channels_file): # First check - channels don't exist anymore (deleted?)
+            await interaction.followup.send("Some or all channels were not found.", ephemeral=True)
             return
-    
         with open(channels_file, "r") as file:
             try:
                 all_channels = json.load(file)
@@ -42,14 +40,14 @@ class PrintChannels(commands.Cog):
                 all_channels = {}
         
         server_channels = all_channels.get(guild_id)
-        if not server_channels:
-            await interaction.followup.send("❌ Channels not set for this server. Use `/setchannels`.")
+        if not server_channels: # Second check - channels were never set at all.
+            await interaction.followup.send("❌ Channels not set for this server. Use `/setchannels`.", ephemeral=True)
             return
 
-        # 3. Load and extract Clan Info (Nested)
+        # Load the clan information.
         clans_file = "storage/clansinfo.json"
         if not os.path.exists(clans_file):
-            await interaction.followup.send("No clan found. Use /clan create.")
+            await interaction.followup.send("No clan found. Use `/clan create`.")
             return
         
         with open (clans_file, "r") as file:
@@ -67,7 +65,7 @@ class PrintChannels(commands.Cog):
         clanTag = server_clan.get("CLAN_TAG", "UNK")
         clanDesc = server_clan.get("CLAN_DESCRIPTION", "No description.")
 
-        # 4. Handle Message Tracking (Nested)
+        # Handle message tracking.
         msg_file = "storage/messages.json"
         all_msg_data = {}
         if os.path.exists(msg_file):
@@ -108,14 +106,12 @@ class PrintChannels(commands.Cog):
                     )
                     return # Exit the function so we don't send a duplicate
                 except discord.NotFound:
-                    # If the message was deleted manually, we ignore the error and 
-                    # proceed to send a new one below.
                     pass 
 
             # If we reached this point, the message doesn't exist. Send it now.
             new_msg = await channel.send(text)
             server_msgs[channelkey] = new_msg.id
-        # 5. Execute Printing Logic
+
         # Roster
         roster_ch = await fetch_ch(server_channels.get("ROSTER"))
         if roster_ch:
@@ -134,10 +130,10 @@ class PrintChannels(commands.Cog):
             results_msg = f"# 🏆 {clanName} VS History\n\n> *No matches recorded. Use `/vs add` to log a match!*"
             await checkmsg(results_ch, "RESULTS", results_msg)
 
-        # 6. Save back the updated nested data
+        # Save data. 
         all_msg_data[guild_id] = server_msgs
-        with open(msg_file, "w") as f:
-            json.dump(all_msg_data, f, indent=4)
+        with open(msg_file, "w") as file:
+            json.dump(all_msg_data, file, indent=4)
 
         await interaction.followup.send("✅ The channels now have messages printed!")
 
