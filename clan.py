@@ -84,6 +84,7 @@ class ClansManager(commands.Cog):
 
     @app_commands.command(name="clan", description="Manage your clan settings")
     @has_permission(4) # Requires Level 4 to create, edit, or delete the clan. Server owners bypass this check.
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     @app_commands.describe(option="Choose an operation")
     @app_commands.choices(option=[
         app_commands.Choice(name="Create", value="create"),
@@ -96,10 +97,10 @@ class ClansManager(commands.Cog):
         guild_id = str(interaction.guild_id)
         
         # Load the file to check what currently exists
-        file_path = 'storage/clansinfo.json'
+        clans_file = 'storage/clansinfo.json'
         data = {}
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
+        if os.path.exists(clans_file):
+            with open(clans_file, 'r') as file:
                 try:
                     data = json.load(file)
                 except json.JSONDecodeError:
@@ -129,7 +130,7 @@ class ClansManager(commands.Cog):
             # Delete ONLY this server's clan data.
             if guild_id in data:
                 del data[guild_id] 
-                with open(file_path, 'w') as file:
+                with open(clans_file, 'w') as file:
                     json.dump(data, file, indent=4)
                 await interaction.response.send_message("🗑️ Clan information has been deleted.")
             else:

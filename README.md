@@ -15,6 +15,6 @@ TO DO (Last updated April 27 2026)
 - Edge cases: Discord message character limit exceeded; clan info edited but original messages already printed... etc. 
 - Future reliability improvements
 
-All data is stored in the storage json files. 
+All data is stored in the storage json files. May be converted to a database later, but for now, this is how I'm going since it's going to be a small test pool that have this bot when it's ready to be tested.
 
 Once I finish this bot's core logic and features, I want to test it on select servers.
