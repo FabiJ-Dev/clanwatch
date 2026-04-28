@@ -138,7 +138,7 @@ class ClansManager(commands.Cog):
                 else:
                     await interaction.response.send_message("❌ No clan exists to delete.", ephemeral=True)
             else: 
-                await interaction.response.send_message("Only the server owner can delete the clan. Contact the server owner.")
+                await interaction.response.send_message("Only the server owner can delete the clan. Contact the server owner.", ephemeral=True)
 
 # Pass the bot's modal and cog into main.py, once it is ready to use. 
 async def setup(bot):
