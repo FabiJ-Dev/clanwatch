@@ -83,7 +83,7 @@ class ClansManager(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="clan", description="Manage your clan settings")
-    @has_permission(4) # Requires Level 4 to create, edit, or delete the clan. Server owners bypass this check.
+    @has_permission(4) # Requires Level 4 to edit the clan or create it. Only server owner can delete clan.  
     @app_commands.guilds(discord.Object(id=GUILD_ID))
     @app_commands.describe(option="Choose an operation")
     @app_commands.choices(option=[
@@ -128,13 +128,17 @@ class ClansManager(commands.Cog):
 
         elif option.value == "delete":
             # Delete ONLY this server's clan data.
-            if guild_id in data:
-                del data[guild_id] 
-                with open(clans_file, 'w') as file:
-                    json.dump(data, file, indent=4)
-                await interaction.response.send_message("🗑️ Clan information has been deleted.")
-            else:
-                await interaction.response.send_message("❌ No clan exists to delete.", ephemeral=True)
+            # NEW CHECK: Only works if the server owner uses it. 
+            if interaction.user.id == interaction.guild.owner_id:
+                if guild_id in data:
+                    del data[guild_id] 
+                    with open(clans_file, 'w') as file:
+                        json.dump(data, file, indent=4)
+                    await interaction.response.send_message("🗑️ Clan information has been deleted.")
+                else:
+                    await interaction.response.send_message("❌ No clan exists to delete.", ephemeral=True)
+            else: 
+                await interaction.response.send_message("Only the server owner can delete the clan. Contact the server owner.")
 
 # Pass the bot's modal and cog into main.py, once it is ready to use. 
 async def setup(bot):

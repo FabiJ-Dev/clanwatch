@@ -1,1 +1,1 @@
-from clan import ClansModal
+interaction.
