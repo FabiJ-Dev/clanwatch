@@ -10,9 +10,13 @@ For testing purposes, maximum 15 players in a single clan. May expand.
 Roster message will split based on levels set in the server: Level 1s at the bottom, level 4s at the top. 
 - /vs (add/edit/delete) (date in DD/MM/YY) (score {your clan} {other clan}) (other clan's shorthand tag)
 Would appear as (mockup), Clan A (yours) vs Clan B (them)
+
 01 | 30/4/26 | CA 5:2 CB | ✅
+
 02 | 30/4/26 | CA 5:5 CB | 🟡
+
 03 | 30/4/26 | CA 2:5 CB | ❌ 
+
 - /kills (add/remove/set/clear) for kill leaderboard.
 Would appear as (mockup):
 **Top Kills for [Clan]**
