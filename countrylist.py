@@ -1,3 +1,5 @@
+# Dictionary of countries that can be used on players' roster information.
+
 from discord import app_commands
 
 COUNTRIES = {
