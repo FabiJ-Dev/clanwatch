@@ -53,8 +53,9 @@ COUNTRIES = {
         app_commands.Choice(name="🇨🇮 Côte d'Ivoire", value="Côte d'Ivoire"),
         app_commands.Choice(name="🇭🇷 Croatia", value="Croatia"),
         app_commands.Choice(name="🇨🇺 Cuba", value="Cuba"),
+        app_commands.Choice(name="🇨🇼 Curaçao", value="Curaçao"),
         app_commands.Choice(name="🇨🇾 Cyprus", value="Cyprus"),
-        app_commands.Choice(name="🇨🇿 Czech Republic", value="Czech Republic"),
+        app_commands.Choice(name="🇨🇿 Czechia", value="Czechia"),
     ],
 
     "D": [
