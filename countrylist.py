@@ -69,6 +69,8 @@ COUNTRIES = {
 
     "E": [
         app_commands.Choice(name="🇪🇨 Ecuador", value="Ecuador"),
+        # TEST: ENGLAND
+        app_commands.Choice(name="🏴󠁧󠁢󠁥󠁮󠁧󠁿 England", value="England"),
         app_commands.Choice(name="🇪🇬 Egypt", value="Egypt"),
         app_commands.Choice(name="🇸🇻 El Salvador", value="El Salvador"),
         app_commands.Choice(name="🇬🇶 Equatorial Guinea", value="Equatorial Guinea"),
@@ -212,7 +214,6 @@ COUNTRIES = {
         app_commands.Choice(name="🇷🇼 Rwanda", value="Rwanda"),
         app_commands.Choice(name="🇷🇴 Romania", value="Romania"),
         app_commands.Choice(name="🇷🇺 Russian Federation", value="Russian Federation"),
-        app_commands.Choice(name="🇰🇷 Republic of Korea", value="Republic of Korea"),
         app_commands.Choice(name="🇷🇪 Réunion", value="Réunion"),
     ],
 
@@ -224,6 +225,7 @@ COUNTRIES = {
         app_commands.Choice(name="🇸🇲 San Marino", value="San Marino"),
         app_commands.Choice(name="🇸🇹 Sao Tome and Principe", value="Sao Tome and Principe"),
         app_commands.Choice(name="🇸🇦 Saudi Arabia", value="Saudi Arabia"),
+        app_commands.Choice(name="🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland", value="Scotland"),
         app_commands.Choice(name="🇸🇳 Senegal", value="Senegal"),
         app_commands.Choice(name="🇷🇸 Serbia", value="Serbia"),
         app_commands.Choice(name="🇸🇨 Seychelles", value="Seychelles"),
@@ -234,6 +236,7 @@ COUNTRIES = {
         app_commands.Choice(name="🇸🇧 Solomon Islands", value="Solomon Islands"),
         app_commands.Choice(name="🇸🇴 Somalia", value="Somalia"),
         app_commands.Choice(name="🇿🇦 South Africa", value="South Africa"),
+        app_commands.Choice(name="🇰🇷 South Korea", value="South Korea"),
         app_commands.Choice(name="🇸🇸 South Sudan", value="South Sudan"),
         app_commands.Choice(name="🇪🇸 Spain", value="Spain"),
         app_commands.Choice(name="🇱🇰 Sri Lanka", value="Sri Lanka"),
@@ -278,6 +281,7 @@ COUNTRIES = {
 
     "W": [
         app_commands.Choice(name="🇼🇫 Wallis and Futuna", value="Wallis and Futuna"),
+        app_commands.Choice(name="🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales", value="Wales"),
         app_commands.Choice(name="🇪🇭 Western Sahara", value="Western Sahara"),
     ],
 

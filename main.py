@@ -10,11 +10,12 @@ from dotenv import load_dotenv
 # Cogs to be used from other .py files across the project directory:
 from setchannels import ChannelManager 
 from clan import ClansManager
-from clan import ClansModal
 from getchannels import GetChannels
 from printchannels import PrintChannels
 from setroles import RoleManager
 from roster import RosterCog
+from vsresults import VsCog
+from topkills import KillsCog
 
 load_dotenv() # load the token 
 token = os.getenv('DISCORD_TOKEN') # get the token (secret), so we can run the bot.
@@ -29,11 +30,13 @@ class Client(commands.Bot):
         await self.add_cog(PrintChannels(self))
         await self.add_cog(RoleManager(self))
         await self.add_cog(RosterCog(self))
+        await self.add_cog(VsCog(self))
+        await self.add_cog(KillsCog(self))
         print("Cogs loaded successfully!") 
 
         self.tree.on_error = self.on_app_command_error
 
-# Sync commands and print the "Ready" message.
+# Sync commands and print the "Ready" message. 
     async def on_ready(self):
         print(f'Logged in as {self.user}')
 
