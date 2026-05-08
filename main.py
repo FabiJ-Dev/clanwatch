@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 from setchannels import ChannelManager 
 from clan import ClansManager
 from getchannels import GetChannels
-from printchannels import PrintChannels
 from setroles import RoleManager
 from roster import RosterCog
 from vsresults import VsCog
@@ -27,7 +26,6 @@ class Client(commands.Bot):
         await self.add_cog(ChannelManager(self))
         await self.add_cog(ClansManager(self))
         await self.add_cog(GetChannels(self))
-        await self.add_cog(PrintChannels(self))
         await self.add_cog(RoleManager(self))
         await self.add_cog(RosterCog(self))
         await self.add_cog(VsCog(self))

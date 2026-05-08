@@ -1,3 +1,28 @@
 {
-    "1437965874056265830": {}
+    "1437965874056265830": {
+        "GUEST_Nick": {
+            "nickname": "Nick",
+            "flag": "\ud83c\uddf3\ud83c\uddeb",
+            "level": 1,
+            "is_guest": true
+        },
+        "GUEST_Mark": {
+            "nickname": "Mark",
+            "flag": "\ud83c\uddf5\ud83c\uddf1",
+            "level": 1,
+            "is_guest": true
+        },
+        "GUEST_Nicky": {
+            "nickname": "Nicky",
+            "flag": "\ud83c\uddfa\ud83c\uddfe",
+            "level": 1,
+            "is_guest": true
+        },
+        "GUEST_Joe": {
+            "nickname": "Joe",
+            "flag": "\ud83c\udde8\ud83c\uddfa",
+            "level": 1,
+            "is_guest": true
+        }
+    }
 }

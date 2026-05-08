@@ -64,16 +64,43 @@ class KillsGroup(app_commands.Group):
             for i, p in enumerate(leaderboard, 1):
                 content += f"{i}. {p['flag']} {p['nickname']} - {p['kills']} ☠\n"
 
-        channel_id = channels_data.get("KILLS")
-        msg_id = msg_data.get("KILLS")
+        chan_id = channels_data.get("RESULTS")
+        m_id = msg_data.get("RESULTS")
         
-        if channel_id and msg_id:
-            channel = self.bot.get_channel(int(channel_id))
+        if chan_id and m_id:
+            # 1. Try to get it from memory (Cache)
+            channel = self.bot.get_channel(int(chan_id))
+            
+            # 2. If memory is empty because of a restart, ask the API (Fetch)
+            if channel is None:
+                try:
+                    channel = await self.bot.fetch_channel(int(chan_id))
+                except discord.NotFound:
+                    print("Channel was deleted.")
+                except discord.Forbidden:
+                    print("Bot lacks permission to see this channel.")
+                    
+# 3. Proceed as normal
             if channel:
                 try:
-                    msg = await channel.fetch_message(int(msg_id))
+                    msg = await channel.fetch_message(int(m_id))
                     await msg.edit(content=content)
-                except: pass
+                except discord.NotFound:
+                    # SELF-HEALING: If someone manually deleted the message, print a fresh one!
+                    print("Top kills message missing. Healing and printing a new one...")
+                    new_msg = await channel.send(content)
+                    
+                    # Load the FULL messages database so we don't accidentally wipe other servers
+                    full_msg_db = self.load_json('storage/messages.json')
+                    if guild_id not in full_msg_db:
+                        full_msg_db[guild_id] = {}
+                        
+                    # Save the new ID so the bot locks onto it for the next edit
+                    full_msg_db[guild_id]["KILLS"] = new_msg.id
+                    self.save_json('storage/messages.json', full_msg_db)
+                    
+                except Exception as e: 
+                    print(f"Failed to edit message: {e}")
 
     @app_commands.command(name="add", description="Add kills to a player.")
     @has_permission(3)

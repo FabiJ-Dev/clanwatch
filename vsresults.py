@@ -78,14 +78,46 @@ class VsGroup(app_commands.Group):
         m_id = msg_data.get("RESULTS")
         
         if chan_id and m_id:
+            # 1. Try to get it from memory (Cache)
             channel = self.bot.get_channel(int(chan_id))
+            
+            # 2. If memory is empty because of a restart, ask the API (Fetch)
+            if channel is None:
+                try:
+                    channel = await self.bot.fetch_channel(int(chan_id))
+                except discord.NotFound:
+                    print("Channel was deleted.")
+                except discord.Forbidden:
+                    print("Bot lacks permission to see this channel.")
+                    
+# 3. Proceed as normal
             if channel:
                 try:
                     msg = await channel.fetch_message(int(m_id))
                     await msg.edit(content=content)
-                except: pass
+                except discord.NotFound:
+                    # SELF-HEALING: If someone manually deleted the message, print a fresh one!
+                    print("Results message missing. Healing and printing a new one...")
+                    new_msg = await channel.send(content)
+                    
+                    # Load the FULL messages database so we don't accidentally wipe other servers
+                    full_msg_db = self.load_json('storage/messages.json')
+                    if guild_id not in full_msg_db:
+                        full_msg_db[guild_id] = {}
+                        
+                    # Save the new ID so the bot locks onto it for the next edit
+                    full_msg_db[guild_id]["RESULTS"] = new_msg.id
+                    self.save_json('storage/messages.json', full_msg_db)
+                    
+                except Exception as e: 
+                    print(f"Failed to edit message: {e}")
 
     @app_commands.command(name="add", description="Add a result to history.")
+    @app_commands.describe(
+        date="Format: DD/MM/YY",
+        score="Format X:Y. X = YOU, Y = THEM",
+        othertag="Opponent's clan tag (Up to 3 letters)"
+    )
     @has_permission(3)
     async def add(self, interaction: discord.Interaction, date: str, score: str, othertag: str):
         await interaction.response.defer(ephemeral=True)
@@ -110,6 +142,12 @@ class VsGroup(app_commands.Group):
         await interaction.followup.send(f"✅ Added match vs **{clean_tag}**.")
 
     @app_commands.command(name="edit", description="Edit a match using its ID.")
+    @app_commands.describe(
+        id="The ID number of the match you want to edit",
+        date="Format DD/MM/YY",
+        score="Format X:Y, X = YOU; Y = THEM",
+        othertag="Opponent's clan tag (up to 3 letters)"
+    )
     @has_permission(3)
     async def edit(self, interaction: discord.Interaction, id: int, date: str = None, score: str = None, othertag: str = None):
         await interaction.response.defer(ephemeral=True)
@@ -136,6 +174,9 @@ class VsGroup(app_commands.Group):
         await interaction.followup.send(f"✅ Updated match #{id:02d}.")
 
     @app_commands.command(name="delete", description="Delete a match (IDs will shift).")
+    @app_commands.describe(
+        id="The ID number of the match you want to delete"
+    )
     @has_permission(3)
     async def delete(self, interaction: discord.Interaction, id: int):
         await interaction.response.defer(ephemeral=True)

@@ -67,15 +67,43 @@ class RosterGroup(app_commands.Group):
         content += f"**Total Members: {len(roster_data)}/15**"
 
         # Print to the channel we had set earlier.
-        channel_id = channels_data.get("ROSTER")
-        msg_id = msg_data.get("ROSTER")
-        if channel_id and msg_id:
-            channel = self.bot.get_channel(int(channel_id))
+        chan_id = channels_data.get("ROSTER")
+        m_id = msg_data.get("ROSTER")
+        
+        if chan_id and m_id:
+            # 1. Try to get it from memory (Cache)
+            channel = self.bot.get_channel(int(chan_id))
+            
+            # 2. If memory is empty because of a restart, ask the API (Fetch)
+            if channel is None:
+                try:
+                    channel = await self.bot.fetch_channel(int(chan_id))
+                except discord.NotFound:
+                    print("Channel was deleted.")
+                except discord.Forbidden:
+                    print("Bot lacks permission to see this channel.")
+                    
+ # 3. Proceed as normal
             if channel:
                 try:
-                    msg = await channel.fetch_message(int(msg_id))
+                    msg = await channel.fetch_message(int(m_id))
                     await msg.edit(content=content)
-                except: pass
+                except discord.NotFound:
+                    # SELF-HEALING: If someone manually deleted the message, print a fresh one!
+                    print("Roster message missing. Healing and printing a new one...")
+                    new_msg = await channel.send(content)
+                    
+                    # Load the FULL messages database so we don't accidentally wipe other servers
+                    full_msg_db = self.load_json('storage/messages.json')
+                    if guild_id not in full_msg_db:
+                        full_msg_db[guild_id] = {}
+                        
+                    # Save the new ID so the bot locks onto it for the next edit
+                    full_msg_db[guild_id]["ROSTER"] = new_msg.id
+                    self.save_json('storage/messages.json', full_msg_db)
+                    
+                except Exception as e: 
+                    print(f"Failed to edit message: {e}")
 
     # COUNTRY - Split by first letter, THEN the country options themselves.
     LETTER_CHOICES = [app_commands.Choice(name=letter, value=letter) for letter in "ABCDEFGHIJKLMNOPQRSTUVWYZ"]
@@ -89,6 +117,11 @@ class RosterGroup(app_commands.Group):
 
     # Usage: /roster add (nickname) (country-fl) (country) (@User if provided)
     @app_commands.command(name="add", description="Add a user to the roster.")
+    @app_commands.describe(
+        nickname="The name of the player",
+        letter="The first letter of the country the player is from",
+        country="The country the player is from"
+    )
     @app_commands.choices(letter=LETTER_CHOICES)
     @app_commands.autocomplete(country=country_autocomplete)
     @has_permission(3)
